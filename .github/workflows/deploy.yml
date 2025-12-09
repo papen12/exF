@@ -21,6 +21,3 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Docker Image
-        run: docker push ${{ secrets.DOCKER_USER }}/static-site:latest
