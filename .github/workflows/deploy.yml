@@ -1,13 +1,5 @@
 name: Deploy Static Website
 
-
-
-
-
-
-
-
-
 on:
   push:
     branches:
@@ -31,11 +23,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USER }}/static-site:latest .
+        run: docker build -t ${{ secrets.DOCKER_USER }}/static-site:latest .
 
       - name: Push Docker Image
-        run: |
-          docker push ${{ secrets.DOCKER_USER }}/static-site:latest
-
- 
+        run: docker push ${{ secrets.DOCKER_USER }}/static-site:latest
