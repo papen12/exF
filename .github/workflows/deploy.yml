@@ -1,49 +1,50 @@
 name: CI/CD Deploy with Docker
 
 on:
-    push:
-        branches:
-            - dev
-    workflow_dispatch:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
 
 jobs:
-    build_and_push:
-        runs-on: ubuntu-latest
+  build_and_push:
+    runs-on: ubuntu-latest
 
-        env:
-            DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
-            IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/imageFinal
+    env:
+      DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/imageFinal   
 
-        steps:
-            - name: Checkout código
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
 
-            - name: Instalar Node
-              uses: actions/setup-node@v3
-              with:
-                  node-version: 20
+      - name: Instalar Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
 
-            - name: Instalar dependencias
-              run: npm install
+      - name: Instalar dependencias
+        working-directory: ./
+        run: npm install
 
-            - name: Obtener short SHA del commit
-              id: vars
-              run: echo "SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+      - name: Obtener short SHA del commit
+        id: vars
+        run: echo "SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
 
-            - name: Login a Docker Hub
-              run: echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+      - name: Login a Docker Hub
+        run: echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
-            - name: Construir imagen Docker
-              run: |
-                  docker build -t $IMAGE_NAME:latest \
-                               -t $IMAGE_NAME:${{ steps.vars.outputs.SHA }} .
+      - name: Construir imagen Docker
+        run: |
+          docker build -t $IMAGE_NAME:latest \
+                       -t $IMAGE_NAME:${{ steps.vars.outputs.SHA }} .
 
-            - name: Push a Docker Hub (latest)
-              run: docker push $IMAGE_NAME:latest
+      - name: Push a Docker Hub (latest)
+        run: docker push $IMAGE_NAME:latest
 
-            - name: Push a Docker Hub (SHA)
-              run: docker push $IMAGE_NAME:${{ steps.vars.outputs.SHA }}
+      - name: Push a Docker Hub (SHA)
+        run: docker push $IMAGE_NAME:${{ steps.vars.outputs.SHA }}
 
-            - name: Mensaje final
-              run: echo "🚀 Imagen enviada a Docker Hub exitosamente"
+      - name: Mensaje final
+        run: echo "🚀 Imagen enviada a Docker Hub exitosamente"
