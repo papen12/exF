@@ -30,30 +30,4 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USER }}/static-site:latest
 
-  notify-success:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - name: Send Success Email
-        uses: dawidd6/action-send-mail@v6
-        with:
-          connection_url: smtp+starttls://${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}@smtp.gmail.com:465
-          subject: "Sitio estático desplegado exitosamente"
-          body: "La imagen Docker se creó y subió correctamente a DockerHub."
-          to: molinafranz943@gmail.com
-          from: ${{ secrets.EMAIL_USER }}
-
-  notify-failure:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: failure()
-    steps:
-      - name: Send Failure Email
-        uses: dawidd6/action-send-mail@v6
-        with:
-          connection_url: smtp+starttls://${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}@smtp.gmail.com:465
-          subject: "Error en pipeline de sitio estático"
-          body: "La construcción o subida de la imagen falló."
-          to: molinafranz943@gmail.com
-          from: ${{ secrets.EMAIL_USER }}
+ 
