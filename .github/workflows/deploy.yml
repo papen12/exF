@@ -1,50 +1,59 @@
-name: CI/CD Deploy with Docker
+name: Deploy Static Website
 
 on:
   push:
     branches:
-      - dev
+      - main
   workflow_dispatch:
 
 jobs:
-  build_and_push:
+  build-and-push:
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
-      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/imageFinal   
-
     steps:
-      - name: Checkout código
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Instalar Node
-        uses: actions/setup-node@v3
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Login
+        uses: docker/login-action@v3
         with:
-          node-version: 20
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Instalar dependencias
-        working-directory: ./
-        run: npm install
-
-      - name: Obtener short SHA del commit
-        id: vars
-        run: echo "SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
-
-      - name: Login a Docker Hub
-        run: echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-
-      - name: Construir imagen Docker
+      - name: Build Docker Image
         run: |
-          docker build -t $IMAGE_NAME:latest \
-                       -t $IMAGE_NAME:${{ steps.vars.outputs.SHA }} .
+          docker build -t ${{ secrets.DOCKER_USER }}/static-site:latest .
 
-      - name: Push a Docker Hub (latest)
-        run: docker push $IMAGE_NAME:latest
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USER }}/static-site:latest
 
-      - name: Push a Docker Hub (SHA)
-        run: docker push $IMAGE_NAME:${{ steps.vars.outputs.SHA }}
+  notify-success:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Send Success Email
+        uses: dawidd6/action-send-mail@v6
+        with:
+          connection_url: smtp+starttls://${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}@smtp.gmail.com:465
+          subject: "Sitio estático desplegado exitosamente"
+          body: "La imagen Docker se creó y subió correctamente a DockerHub."
+          to: molinafranz943@gmail.com
+          from: ${{ secrets.EMAIL_USER }}
 
-      - name: Mensaje final
-        run: echo "🚀 Imagen enviada a Docker Hub exitosamente"
+  notify-failure:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send Failure Email
+        uses: dawidd6/action-send-mail@v6
+        with:
+          connection_url: smtp+starttls://${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}@smtp.gmail.com:465
+          subject: "Error en pipeline de sitio estático"
+          body: "La construcción o subida de la imagen falló."
+          to: molinafranz943@gmail.com
+          from: ${{ secrets.EMAIL_USER }}
